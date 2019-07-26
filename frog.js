@@ -12,6 +12,9 @@ function Frog(){
 	this.height = 30;
 	this.width = 50;
 
+
+	this.movement_timer = 0;
+
 	//38x24
 
 
@@ -26,7 +29,7 @@ function Frog(){
 	
 	this.render = function(ctx){
 		ctx.fillStyle="red";
-		ctx.fillRect(this.x, this.y, this.width, this.height);
+		ctx.fillRect(this.x+6, this.y+6, this.width-12, this.height);
 		
 	}
 
@@ -37,7 +40,7 @@ function Frog(){
 		
 	}
 	
-	this.collides = function(pipe){
+	this.collides = function(Entity){
 		if(this.x + this.width_radius >= pipe.x
 			&& this.x - this.width_radius <= pipe.x + pipe.width
 			&& this.y - this.height_radius <= pipe.y + pipe.height

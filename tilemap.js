@@ -136,7 +136,8 @@ class FroggerTileMap extends TileMap{
 		var retObj = {};
 		var row, col;
 
-
+		row = Math.floor(this.tiles.length*((y) / this.height));
+		col = Math.floor(this.tiles[0].length*((x) / this.width))
 
 		retObj["row"] = row;
 		retObj["col"] = col;
