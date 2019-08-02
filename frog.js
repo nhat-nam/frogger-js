@@ -33,9 +33,6 @@ function Frog(){
 		
 	}
 
-	this.flap = function(){
-		
-	}
 	this.reset = function(){
 		
 	}

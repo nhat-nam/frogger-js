@@ -6,7 +6,7 @@ ctx = canvas.getContext("2d");
 ctx.fillStyle = "black";
 ctx.fillRect(0, 0, WIDTH, HEIGHT);
 var map = [
-            "gwwggwwggwwggwwggwwgg",
+            "ggggggggggggggggggggg",
             "wwwwwwwwwwwwwwwwwwwww",
             "wwwwwwwwwwwwwwwwwwwww",
             "wwwwwwwwwwwwwwwwwwwww",
@@ -21,20 +21,6 @@ var map = [
             "ggggggggggggggggggggg"
          ];
 
-var objMap = [
-               "",
-               "l5---    l3-     s8------       l5---    l3-     l8------  s   ",
-               "ttt    ttt   ttt    ttt   ttt    ttt   ttt    ttt   ttt    t   ",
-               "s3-    s2  l5---    l3-     s4--  s3-    s2  l5---       l3-   ",
-               "l3-     s4--  s3-    s2  l5---       l3-   s3-    s2  l5---    ",
-               "ttt    ttt   ttt    ttt   ttt    ttt   ttt    ttt   ttt    t   ",
-               "",
-               "c  c  c  c  c  c  c  c  c  c  c  c  c  c  c  c  c  c  c  c  c  ",
-               "b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  ",
-               "d--    d--    d--    d--    d--    d--    d--    d--    d--    ",
-               "  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b  b",
-
-         ];
 
 
 function Game(context, width, height) {
@@ -49,6 +35,29 @@ function Game(context, width, height) {
    this.num_rows = 13;
    this.num_cols = 21;
 
+   this.menu = new FroggerMenu(width, height);
+   this.menu.init();
+
+   this.level = 0;
+   this.lives_remaining = 1;
+
+   /* game states 
+
+         menu
+         playing
+         paused
+
+         level_title_screen
+
+         end_of_life
+
+         game_over
+
+   */
+
+
+   this.game_state = "menu";
+
    this.grid_height = height/this.num_rows;
    this.grid_width = width/this.num_cols;
    this.tileMap = new FroggerTileMap(width, height, width/this.num_cols, height/this.num_rows);
@@ -58,7 +67,14 @@ function Game(context, width, height) {
    this.frog = new Frog();
    this.frog.x = width / this.num_cols * Math.floor(this.num_cols/2);
    this.frog.y = (height / this.num_rows) * (this.num_rows-1);
-
+  
+   this.resetFrogPosition = function(){
+      this.frog.x = width / this.num_cols * Math.floor(this.num_cols/2);
+      this.frog.y = (height / this.num_rows) * (this.num_rows-1);
+      this.frog.dx = 0;
+      this.frog.dy = 0;
+      
+   }
    //
    this.entities = [];
 
@@ -70,18 +86,33 @@ function Game(context, width, height) {
             var obj = null;
 
             switch(ch){
+               case "W":
+                  var obj = new WinningSpot(j*this.grid_width, i*this.grid_height, this.grid_width, this.grid_height);
+                  this.entities.push(obj);
+                  break;
+
+               case "C":
                case "c":
                   var obj = new FroggerCar(j*this.grid_width, i*this.grid_height, this.grid_width, this.grid_height);
                   this.entities.push(obj);
+                  if(ch == "C"){
+                     obj.dx = obj.dx * 3;
+                  }
                   break;
                case "b":
                   var obj = new FroggerCar2(j*this.grid_width, i*this.grid_height, this.grid_width, this.grid_height);
                   this.entities.push(obj);
-                  break;   
+                  break;
+
+               case "D": 
                case "d":
                   var obj = new FroggerTruck(j*this.grid_width, i*this.grid_height, this.grid_width, this.grid_height);
                   this.entities.push(obj);   
+                  if(ch == "D"){
+                     obj.dx = obj.dx * 2;
+                  }
                   break;
+
                case "t":
                   var obj = new FroggerTurtle(j*this.grid_width, i*this.grid_height, this.grid_width, this.grid_height);
                   this.entities.push(obj);   
@@ -118,66 +149,147 @@ function Game(context, width, height) {
    }
 
    /** 
+   *  Reset game settings
+   *  
+   **/
+   this.reset = function(){
+      this.level = 0;
+      this.lives_remaining = 1;
+      this.resetFrogPosition();
+   }
+
+   this.nextLevel = function(){
+      // reset game state variables
+         // frogs on winning spaces
+            // this.winning_spots = 0;
+
+      this.level++;
+      this.beginLevel(this.level);
+
+   }
+
+   this.beginLevel = function(n){
+
+      // remove all previous entities
+      this.entities = [];
+      // verify that n is an actual level
+      this.loadObjMap(GAME_LEVELS[n-1]);
+      // show new level title screen
+      this.game_state = "level_title_screen";
+      var game = this;
+      setTimeout(function(){game.game_state="playing";}, 3000);
+
+   }
+   this.frog_dies = function(){
+      this.lives_remaining--;
+      if(this.lives_remaining< 0){
+         // show game over
+         this.reset();
+         this.game_state = "menu";
+      }else{
+         // still had lives remaining....
+            //reset frog
+         this.resetFrogPosition();
+      }
+   }
+   /** 
    *  Update
    **/
    this.update = function(delta) {
       
-      var frog_delta = delta;
-      if(this.frog.movement_timer > 0){
-         this.frog.movement_timer = this.frog.movement_timer - delta;
 
-         if(this.frog.movement_timer < 0){
-            frog_delta = this.frog.movement_timer + delta;
+      if(this.game_state == "menu"){
+
+
+
+      }else if(this.game_state == "playing"){
+
+         var frog_delta = delta;
+         if(this.frog.movement_timer > 0){
+            this.frog.movement_timer = this.frog.movement_timer - delta;
+
+            if(this.frog.movement_timer < 0){
+               frog_delta = this.frog.movement_timer + delta;
+            }
+         }else if(this.frog.movement_timer <= 0 && this.frog.lock){
+            this.frog.lock = false;
+            this.frog.dx = 0;
+            this.frog.dy = 0;
          }
-      }else if(this.frog.movement_timer <= 0 && this.frog.lock){
-         this.frog.lock = false;
-         this.frog.dx = 0;
-         this.frog.dy = 0;
-      }
 
-      // loop through game entities and update each
-      for(var i = 0; i < this.entities.length; i++){
-         this.entities[i].update(delta);
-         var e = this.entities[i];
+         // loop through game entities and update each
+         var frog_row = Math.floor(13*((this.frog.y + this.grid_width/2) / HEIGHT));
+         var frog_col = Math.floor(21*((this.frog.x + this.grid_width/2) / WIDTH));
+         this.frog.on_entity = false;
 
-
-         var frog_row = Math.floor(13*((this.frog.y + 10) / HEIGHT));
-         var frog_col = Math.floor(21*((this.frog.x + 10) / WIDTH));
-
-         var e_obj = this.tileMap.coordToGridLocation(e.x+e.width/2, e.y+e.height/2);
+         for(var i = 0; i < this.entities.length; i++){
+            this.entities[i].update(delta);
+            var e = this.entities[i];
+            var e_obj = this.tileMap.coordToGridLocation(e.x+e.width/2, e.y+e.height/2);
 
 
-         // does entity intersect frog...
-         if(e_obj.row  == frog_row && 
-            (frog_col >=e_obj.col && frog_col < e_obj.col + e.length)){
-            //colliding with entity 'e'
-            if((e instanceof FroggerLog || e instanceof FroggerTurtle)){
-               //it's a type of log
-               if(!this.frog.lock){
-                  this.frog.dx = e.dx;
+            // does entity intersect frog...
+          /*  if(e_obj.row  == frog_row && 
+               (frog_col >=e_obj.col && frog_col < e_obj.col + e.length)){
+            
+            */
+
+            if(e_obj.row == frog_row && 
+                  e.x < this.frog.x+this.grid_width/2 && 
+                  e.x + this.grid_width * e.length > this.frog.x + this.grid_width - this.grid_width/2){
+               //colliding with entity 'e'
+
+               if((e instanceof FroggerLog || e instanceof FroggerTurtle)){
+                  //it's a type of log
+                  if(!this.frog.lock){
+                     this.frog.dx = e.dx;
+                  }
+                  this.frog.on_entity = true;
+               /* check if it's a landing a spot */
+               }else if( e instanceof WinningSpot){
+                  if(e.has_frog){
+                     // lose a life
+                  }else{
+                     // add frog to winning spot
+                        // this.winning_spots++;
+                        // if  winning_spots == 5
+                           // go to next round
+                  }
+                  // round is over
+               }else{
+
+                  this.frog_dies();
                }
-               this.frog.on_entity = true;
+
+            }
+            // if frog can stand on entity && frog is not locked....set frog velocity to speed of obj
+               // frog is attached to entity
+            if(e.dx > 0){
+               //moving to the right
+               if(e.x >= WIDTH){
+                  e.x = e.x - 3000;
+               }
             }else{
-               console.log("DEAD ");
-               alert("dead")
+               if(e.x <= -1*WIDTH){
+                  e.x = e.x + 3000;
+               }
             }
+         }
 
-         }
-         // if frog can stand on entity && frog is not locked....set frog velocity to speed of obj
-            // frog is attached to entity
-         if(e.dx > 0){
-            //moving to the right
-            if(e.x >= WIDTH){
-               e.x = e.x - 3000;
-            }
-         }else{
-            if(e.x <= -1*WIDTH){
-               e.x = e.x + 3000;
+         //check if frog landed in water
+         if(!this.frog.on_entity){
+            if(frog_row > 0 && frog_row < 6){
+               //in water!
+               //dead
+               this.frog_dies();
+
             }
          }
+         this.frog.update(frog_delta);
+
+
       }
-
-      this.frog.update(frog_delta);
+      
 
    }
    /**
@@ -186,6 +298,9 @@ function Game(context, width, height) {
    *  
    **/
    this.render = function() {
+      if(this.game_state == "menu"){
+         this.menu.render(this.ctx);
+      }else{
          this.ctx.clearRect(0, 0, this.width, this.height);
          this.ctx.fillStyle = "black";
          this.tileMap.render(this.ctx);
@@ -195,6 +310,15 @@ function Game(context, width, height) {
          }
 
          this.frog.render(this.ctx);
+
+         if(this.game_state == "level_title_screen"){
+            this.ctx.save();
+            this.ctx.font = "64px Arial";
+            this.ctx.fillStyle = "black";
+            this.ctx.fillText("Level " + this.level, 300,200);
+            ctx.restore();
+         }
+      }
    }
 
    this.moveTo = function(obj, x, y, t){
@@ -335,12 +459,16 @@ window.onkeydown = function(e){
    if(e.key == "ArrowLeft"){
       game.moveFrogLeft();
    }
+   if(e.key == "Enter"){
+      if(game.game_state == "menu"){
+         game.nextLevel();
+      }
+   }
 }
 
 
 // create game and start game
 var game = new Game(ctx, WIDTH, HEIGHT);
-game.loadObjMap(objMap);
 
 //game.loop();
 function gameLoop(timestamp){

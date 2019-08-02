@@ -27,7 +27,23 @@ class Entity{
 		ctx.restore();
 	}
 }
+class WinningSpot extends Entity{
 
+	constructor(x, y, width, height){
+		super(x, y, width, height);
+		this.fillStyle = "yellow";
+		this.has_frog = false;
+		this.dx = 0;
+	}
+	render(ctx){
+		//if frog is on spot, draw frog
+		// else draw food.....or target....or goal
+		ctx.save();
+		ctx.fillStyle= this.fillStyle;
+		ctx.fillRect(this.x, this.y, this.length * this.width, this.height);
+		ctx.restore();
+	}
+}
 class FroggerLog extends Entity{
 	constructor(x, y, width, height){
 		super(x, y, width, height);
